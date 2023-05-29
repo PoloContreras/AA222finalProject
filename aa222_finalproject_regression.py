@@ -184,6 +184,6 @@ def evaluateModelProxy(architecture,xTest,numSamples,output_dim=2):
 #USING THE PROXY SCORE FUNCTION TO DEVELOP AN EXPLORATION DIRECTION IN HOOKE-JEEVES
 def proxyStepDirection(Kh):
 
-    step = np.dot(np.linalg.pinv(Kh) , np.ones((np.shape(Kh)[1],1)))
+    step = -1*np.dot(np.linalg.pinv(Kh) , np.ones((np.shape(Kh)[1],1)))
     
     return step/np.linalg.norm(step)
