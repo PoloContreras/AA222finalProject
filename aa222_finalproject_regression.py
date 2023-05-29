@@ -70,7 +70,7 @@ def BuildModel(architecture,output_dim=2,activation_function='relu'):
     #Parsing the network architecture...
     maxLayers = len(architecture) #the length of the tuple is the maximum number of layers the generated network can have
     layers = 2 #index used to iterate through the tuple describing network structure (minimum of one layer plus input)
-    while architecture[layers] != 0:
+    while layers < maxLayers and architecture[layers] != 0:
         networkArch += [Dense(architecture[layers],input_dim=input,activation=activation_function)]
         layers += 1
 
