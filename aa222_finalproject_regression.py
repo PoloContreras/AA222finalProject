@@ -8,7 +8,6 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from sklearn.metrics import mean_squared_error
 
-
 # import pdb
 
 #LOADING A SPECIFIC DATASET INTO MATRIX FORM, USABLE BY NEURAL NETWORKS
@@ -96,6 +95,9 @@ def BuildModel(architecture,output_dim=2,activation_function='relu'):
         #metrics=['mean_squared_error'], #include this metric?
     )
 
+    for i in range(len(networkArch)): #give names to each of the layers in the model, for future reference
+        model.layers[i]._name = 'layer_' + str(i)
+
     return model
 
 #BUILD, TRAIN AND EVALUATE NEURAL NETWORK OF A SPECIFIC ARCHITECTURE
@@ -133,21 +135,55 @@ def evaluateModelDesign(model,architecture,x,y,xTest,yTest,save=True,training_ep
 
     return score
 
-# #SUBFUNCTION FOR PROXY SCORE CALCULATION: HAMMING DISTANCE
-# def distanceHamming(architecture,testColumns):
+#SUBFUNCTION FOR PROXY SCORE CALCULATION: HAMMING DISTANCE
+def distanceHamming(columnA,columnB): #function takes as input two binary column vectors
+    return float(sum(columnA != columnB)) #Hamming distance is the total number of entries where the columns are different
 
-#     return Kh
+#SUBFUNCTION FOR PROXY SCORE CALCULATION: BINARY VECTORS OF RELU ACTIVATIONS, USING MODEL, FOR EACH SAMPLE
+def reLUvectors(architecture,model,xSamples):
+    
+    layers = len(architecture) - sum(tuple(x == y for x,y in zip(architecture,len(architecture)*(0,) ))) - 1 #number of layers in architecture that have more than zero neurons, excluding input
 
-# #PROXY SCORE FOR A NEURAL NETWORK OF A SPECIFIC ARCHITECTURE
-# def evaluateModelProxy(architecture,xTest,numSamples):
+    C = np.zeros((np.shape(xSamples)[0],sum(architecture[1:]))) #binary row vectors: one column per neuron in model, one row per sample input; ReLU will make entries either positive or turn negative elements to 0
 
-#     if sampleIndices > np.shape(xTest)[0]:
-#         print("Error: number of samples requested to be used for proxy exceeds number of samples in test dataset.")
-#         return None
+    for i in range(layers):
+        layer_output = model.get_layer('layer_'+str(i)).output #recall name of layer to review
+        intermediate_model = keras.models.Model(inputs=model.input,outputs=layer_output) #intermediate model between model input and output we are reviewing
+        intermediate_prediction = intermediate_model.predict(xSamples) 
+        
+        C[:,i*architecture[i+1]:(i+1)*architecture[i+1]] = intermediate_prediction
 
-#     Na = sum(architecture) #total number of neurons in network
+    C = 1.*(C > 0.) #conversion of activated outputs from all neurons into binary form
 
-#     sampleIndices = np.random.default_rng().choice(xTest,numSamples,replace=False) #each row of this matrix is a sample from the test dataset to be used in proxy
+    return C.T
 
+#PROXY SCORE FOR A NEURAL NETWORK OF A SPECIFIC ARCHITECTURE
+def evaluateModelProxy(architecture,xTest,numSamples,output_dim=2):
 
-#     return
+    if numSamples > np.shape(xTest)[0]:
+        print("Error: number of samples requested to be used for proxy exceeds number of samples in test dataset.")
+        return None, None
+
+    Na = sum(architecture[1:]) #total number of neurons in network, excluding input
+
+    xSamples = np.random.default_rng().choice(xTest,numSamples,replace=False) #each row of this matrix is a sample from the test dataset to be used in proxy
+
+    model = BuildModel(architecture,output_dim) #the model is built and initialized, but not trained (also, this proxy function is designed for the ReLU activation function)
+
+    binaryVectors = reLUvectors(architecture,model,xSamples) #binary vectors indicating where the ReLU was active, or not, for each neuron (one row per neuron) for each test example (one column per example)
+
+    Kh = np.expand_dims(np.array([Na - distanceHamming(binaryVectors[:,0],binaryVectors[:,j]) for j in range(numSamples)]),0)
+    for i in range(1,numSamples):
+        Kh = np.vstack((Kh,np.expand_dims(np.array([Na - distanceHamming(binaryVectors[:,i],binaryVectors[:,j]) for j in range(numSamples)]),0)))
+
+    (sign, logscore) = np.linalg.slogdet(Kh)
+    proxyScore = logscore #for now, ignoring the sign of the determinant
+
+    return proxyScore, Kh
+
+#USING THE PROXY SCORE FUNCTION TO DEVELOP AN EXPLORATION DIRECTION IN HOOKE-JEEVES
+def proxyStepDirection(Kh):
+
+    step = np.linalg.inv(Kh) * np.ones((1,np.shape(Kh)[0]))
+    
+    return step/np.linalg.norm(step)
