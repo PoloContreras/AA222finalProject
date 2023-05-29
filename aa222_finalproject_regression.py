@@ -101,7 +101,7 @@ def BuildModel(architecture,output_dim=2,activation_function='relu'):
     return model
 
 #BUILD, TRAIN AND EVALUATE NEURAL NETWORK OF A SPECIFIC ARCHITECTURE
-def evaluateModelDesign(model,architecture,x,y,xTest,yTest,save=True,training_epochs=10): #"model" is supposed to be the output of the BuildModel function, seen above 
+def evaluateModelDesign(model,architecture,x,y,xTest,yTest,save=True,training_epochs=10,verbose=True): #"model" is supposed to be the output of the BuildModel function, seen above 
 
     if training_epochs > 0: #training_epochs=0 will skip the training process and only evaluate the model performance on the test set, for a previously trained model
         model.fit(
@@ -128,7 +128,8 @@ def evaluateModelDesign(model,architecture,x,y,xTest,yTest,save=True,training_ep
 
     score = mean_squared_error(yTest,model.predict(xTest))
 
-    print('Mean squared error of model '+str(architecture)+' on validation data: ',score) #the script will take your word for whatever the specified architecture was, so be careful
+    if verbose:
+        print('Mean squared error of model '+str(architecture)+' on validation data: ',score) #the script will take your word for whatever the specified architecture was, so be careful
 
     if save:
         model.save('regression_finalproject_'+str(architecture)+'.h5') #save complete model as a .h5 file, for reference
@@ -140,7 +141,7 @@ def loadModel(architecture):
     return model
 
 #EVALUATION FUNCTION FOR PREVIOUSLY SAVED MODEL, WITH NO OPTION TO TRAIN DNN FURTHER OR SAVE NETWORK AS A SEPARATE FILE
-def evaluateModel(model,architecture,xTest,yTest):
+def evaluateModel(model,architecture,xTest,yTest,verbose=True):
 
     # y_krm = model.predict(x)
 
@@ -159,7 +160,8 @@ def evaluateModel(model,architecture,xTest,yTest):
 
     score = mean_squared_error(yTest,model.predict(xTest))
 
-    print('Mean squared error of model with structure '+str(architecture)+' on validation data: ',score)
+    if verbose:
+        print('Mean squared error of model with structure '+str(architecture)+' on validation data: ',score)
 
     return score
 
