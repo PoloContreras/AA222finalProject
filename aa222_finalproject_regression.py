@@ -73,7 +73,7 @@ def BuildModel(architecture,output_dim=2,activation_function='relu'):
     maxLayers = len(architecture) #the length of the tuple is the maximum number of layers the generated network can have
     layers = 2 #index used to iterate through the tuple describing network structure (minimum of one layer plus input)
     while layers < maxLayers and architecture[layers] != 0:
-        networkArch += [Dense(architecture[layers],input_dim=input,activation=activation_function)]
+        networkArch += [Dense(architecture[layers],activation=activation_function)]
         layers += 1
 
     if layers < maxLayers and any(networkArch[layers:]):
@@ -133,7 +133,12 @@ def evaluateModelDesign(model,architecture,x,y,xTest,yTest,save=True,training_ep
 
     return score
 
-#PROXY SCORE FOR A NEURAL NETWORK OF A SPECIFIC ARCHITECTURE
+# #SUBFUNCTION FOR PROXY SCORE CALCULATION: HAMMING DISTANCE
+# def distanceHamming(architecture,testColumns):
+
+#     return Kh
+
+# #PROXY SCORE FOR A NEURAL NETWORK OF A SPECIFIC ARCHITECTURE
 # def evaluateModelProxy(architecture,xTest,numSamples):
 
 #     if sampleIndices > np.shape(xTest)[0]:
