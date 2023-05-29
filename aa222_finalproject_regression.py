@@ -8,8 +8,10 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from sklearn.metrics import mean_squared_error
 
+
 # import pdb
 
+#LOADING A SPECIFIC DATASET INTO MATRIX FORM, USABLE BY NEURAL NETWORKS
 def datasetLoad(inputSteps=15,traindata='pedestrian_traindata_ohio.hdf5',testdata='pedestrian_testdata_ohio.hdf5'):
 
     #inputSteps is the number of time steps into which the trajectory data is divided: the first inputSteps-1 time steps are used as an input and the next time step is the prediction
@@ -96,16 +98,16 @@ def BuildModel(architecture,output_dim=2,activation_function='relu'):
 
     return model
 
-def evaluateModelDesign(architecture,x,y,xTest,yTest,save=True,input=28,training_epochs=10,activation_function='relu'):
+#BUILD, TRAIN AND EVALUATE NEURAL NETWORK OF A SPECIFIC ARCHITECTURE
+def evaluateModelDesign(model,architecture,x,y,xTest,yTest,save=True,training_epochs=10): #"model" is supposed to be the output of the BuildModel function, seen above 
 
-    model = BuildModel(architecture,input,activation_function)
-
-    model.fit(
-        x, #training input data
-        y, #training output labels for supervised learning
-        epochs=training_epochs, #number of times to iterate over training data
-        validation_data =(xTest,yTest), #test set for model verification
-    )
+    if training_epochs > 0: #training_epochs=0 will skip the training process and only evaluate the model performance on the test set, for a previously trained model
+        model.fit(
+            x, #training input data
+            y, #training output labels for supervised learning
+            epochs=training_epochs, #number of times to iterate over training data
+            validation_data =(xTest,yTest), #test set for model verification
+        )
 
     # y_krm = model.predict(x)
 
@@ -124,9 +126,23 @@ def evaluateModelDesign(architecture,x,y,xTest,yTest,save=True,input=28,training
 
     score = mean_squared_error(yTest,model.predict(xTest))
 
-    print('Mean squared error of model '+str(architecture)+' on validation data: ',score)
+    print('Mean squared error of model '+str(architecture)+' on validation data: ',score) #the script will take your word for whatever the specified architecture was, so be careful
 
     if save:
         model.save('regression_ensemble_'+str(architecture)+'.h5') #save complete model as a .h5 file, for reference
 
     return score
+
+#PROXY SCORE FOR A NEURAL NETWORK OF A SPECIFIC ARCHITECTURE
+# def evaluateModelProxy(architecture,xTest,numSamples):
+
+#     if sampleIndices > np.shape(xTest)[0]:
+#         print("Error: number of samples requested to be used for proxy exceeds number of samples in test dataset.")
+#         return None
+
+#     Na = sum(architecture) #total number of neurons in network
+
+#     sampleIndices = np.random.default_rng().choice(xTest,numSamples,replace=False) #each row of this matrix is a sample from the test dataset to be used in proxy
+
+
+#     return
