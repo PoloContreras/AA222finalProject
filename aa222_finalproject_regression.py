@@ -131,7 +131,35 @@ def evaluateModelDesign(model,architecture,x,y,xTest,yTest,save=True,training_ep
     print('Mean squared error of model '+str(architecture)+' on validation data: ',score) #the script will take your word for whatever the specified architecture was, so be careful
 
     if save:
-        model.save('regression_ensemble_'+str(architecture)+'.h5') #save complete model as a .h5 file, for reference
+        model.save('regression_finalproject_'+str(architecture)+'.h5') #save complete model as a .h5 file, for reference
+
+    return score
+
+def loadModel(architecture):
+    model = keras.models.load_model('regression_finalproject_'+str(architecture)+'.h5') #this obviously won't work if there is no saved model in the folder with the specified architecture...
+    return model
+
+#EVALUATION FUNCTION FOR PREVIOUSLY SAVED MODEL, WITH NO OPTION TO TRAIN DNN FURTHER OR SAVE NETWORK AS A SEPARATE FILE
+def evaluateModel(model,architecture,xTest,yTest):
+
+    # y_krm = model.predict(x)
+
+    # mse_krm = mean_squared_error(y,y_krm)
+    # print(mse_krm)
+
+    # plt.plot(y,label='original y')
+    # plt.plot(y_krm, label='predicted y')
+    # plt.legend()
+    # plt.show()
+
+    # plt.plot(yTest,label='original y (validation)')
+    # plt.plot(model.predict(xTest),label='predicted y (validation)')
+    # plt.legend()
+    # plt.show()
+
+    score = mean_squared_error(yTest,model.predict(xTest))
+
+    print('Mean squared error of model with structure '+str(architecture)+' on validation data: ',score)
 
     return score
 
