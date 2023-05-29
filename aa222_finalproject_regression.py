@@ -56,25 +56,29 @@ def datasetLoad(inputSteps=15,traindata='pedestrian_traindata_ohio.hdf5',testdat
 
 
 #DEFINIITION OF NEURAL NETWORK STRUCTURE
-def BuildModel(architecture,input=28,activation_function='relu'):
+def BuildModel(architecture,output_dim=2,activation_function='relu'):
+
+    input = architecture[0] #number of neurons matching input vector
 
     #Quick verification that the input has SOMETHING
-    if architecture[0] == 0:
+    if architecture[1] == 0:
         print("Error: the first layer is listed as having no neurons.")
         return None
 
-    networkArch = [Dense(architecture[0],input_dim=input,activation=activation_function)] #initialization of the list describing network structure
+    networkArch = [Dense(architecture[1],input_dim=input,activation=activation_function)] #initialization of the list describing network structure
 
     #Parsing the network architecture...
     maxLayers = len(architecture) #the length of the tuple is the maximum number of layers the generated network can have
-    layers = 1 #index used to iterate through the tuple describing network structure
+    layers = 2 #index used to iterate through the tuple describing network structure (minimum of one layer plus input)
     while architecture[layers] != 0:
         networkArch += [Dense(architecture[layers],input_dim=input,activation=activation_function)]
         layers += 1
 
-    if any(networkArch[layers:]):
+    if layers < maxLayers and any(networkArch[layers:]):
         print("Error: a layer is listed as having nonzero neurons after a zero-neuron layer.")
         return None
+
+    networkArch += [Dense(output_dim,activation='linear')] #output layer, with real-valued outputs
 
     # Example
     # model = Sequential([
@@ -92,14 +96,14 @@ def BuildModel(architecture,input=28,activation_function='relu'):
 
     return model
 
-def evaluateModelDesign(architecture,x,y,xTest,yTest,save=True,input=28,activation_function='relu'):
+def evaluateModelDesign(architecture,x,y,xTest,yTest,save=True,input=28,training_epochs=10,activation_function='relu'):
 
     model = BuildModel(architecture,input,activation_function)
 
     model.fit(
         x, #training input data
         y, #training output labels for supervised learning
-        epochs=10,
+        epochs=training_epochs, #number of times to iterate over training data
         validation_data =(xTest,yTest), #test set for model verification
     )
 
