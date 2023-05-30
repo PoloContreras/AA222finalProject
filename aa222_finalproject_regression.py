@@ -57,9 +57,10 @@ def datasetLoad(inputSteps=15,traindata='pedestrian_traindata_ohio.hdf5',testdat
 
 
 #DEFINIITION OF NEURAL NETWORK STRUCTURE
-def BuildModel(architecture,output_dim=2,activation_function='relu'):
+def BuildModel(architecture,activation_function='relu'):
 
     input = architecture[0] #number of neurons matching input vector
+    output_dim = architecture[-1] #number of neurons matching output vector
 
     #Quick verification that the input has SOMETHING
     if architecture[1] == 0:
@@ -71,11 +72,11 @@ def BuildModel(architecture,output_dim=2,activation_function='relu'):
     #Parsing the network architecture...
     maxLayers = len(architecture) #the length of the tuple is the maximum number of layers the generated network can have
     layers = 2 #index used to iterate through the tuple describing network structure (minimum of one layer plus input)
-    while layers < maxLayers and architecture[layers] != 0:
+    while layers < maxLayers-1 and architecture[layers] != 0:
         networkArch += [Dense(architecture[layers],activation=activation_function)]
         layers += 1
 
-    if layers < maxLayers and any(networkArch[layers:]):
+    if layers < maxLayers-1 and any(architecture[layers+1:-1]):
         print("Error: a layer is listed as having nonzero neurons after a zero-neuron layer.")
         return None
 
@@ -172,16 +173,16 @@ def distanceHamming(columnA,columnB): #function takes as input two binary column
 #SUBFUNCTION FOR PROXY SCORE CALCULATION: BINARY VECTORS OF RELU ACTIVATIONS, USING MODEL, FOR EACH SAMPLE
 def reLUvectors(architecture,model,xSamples):
     
-    layers = len(architecture) - sum(tuple(x == y for x,y in zip(architecture,len(architecture)*(0,) ))) - 1 #number of layers in architecture that have more than zero neurons, excluding input
+    layers = len(architecture) - sum(tuple(x == y for x,y in zip(architecture,len(architecture)*(0,) ))) - 2 #number of layers in architecture that have more than zero neurons, excluding input
 
-    C = np.zeros((np.shape(xSamples)[0],sum(architecture[1:]))) #binary row vectors: one column per neuron in model, one row per sample input; ReLU will make entries either positive or turn negative elements to 0
+    C = np.zeros((np.shape(xSamples)[0],sum(architecture[1:-1]))) #binary row vectors: one column per neuron in model with ReLU, one row per sample input; ReLU will make entries either positive or turn negative elements to 0
 
     for i in range(layers):
         layer_output = model.get_layer('layer_'+str(i)).output #recall name of layer to review
         intermediate_model = keras.models.Model(inputs=model.input,outputs=layer_output) #intermediate model between model input and output we are reviewing
         intermediate_prediction = intermediate_model.predict(xSamples) 
         
-        C[:,i*architecture[i+1]:(i+1)*architecture[i+1]] = intermediate_prediction
+        C[:,sum(architecture[1:i+1]):sum(architecture[1:i+2])] = intermediate_prediction
 
     C = 1.*(C > 0.) #conversion of activated outputs from all neurons into binary form
 
@@ -198,7 +199,7 @@ def evaluateModelProxy(architecture,xTest,numSamples,output_dim=2):
 
     xSamples = np.random.default_rng().choice(xTest,numSamples,replace=False) #each row of this matrix is a sample from the test dataset to be used in proxy
 
-    model = BuildModel(architecture,output_dim) #the model is built and initialized, but not trained (also, this proxy function is designed for the ReLU activation function)
+    model = BuildModel(architecture) #the model is built and initialized, but not trained (also, this proxy function is designed for the ReLU activation function)
 
     binaryVectors = reLUvectors(architecture,model,xSamples) #binary vectors indicating where the ReLU was active, or not, for each neuron (one row per neuron) for each test example (one column per example)
 
