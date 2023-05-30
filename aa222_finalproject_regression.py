@@ -189,13 +189,13 @@ def reLUvectors(architecture,model,xSamples):
     return C.T
 
 #PROXY SCORE FOR A NEURAL NETWORK OF A SPECIFIC ARCHITECTURE
-def evaluateModelProxy(architecture,xTest,numSamples,output_dim=2):
+def evaluateModelProxy(architecture,xTest,numSamples):
 
     if numSamples > np.shape(xTest)[0]:
         print("Error: number of samples requested to be used for proxy exceeds number of samples in test dataset.")
         return None, None
 
-    Na = sum(architecture[1:]) #total number of neurons in network, excluding input
+    Na = sum(architecture[1:-1]) #total number of ReLU functions in network (neurons, excluding output)
 
     xSamples = np.random.default_rng().choice(xTest,numSamples,replace=False) #each row of this matrix is a sample from the test dataset to be used in proxy
 
@@ -209,6 +209,30 @@ def evaluateModelProxy(architecture,xTest,numSamples,output_dim=2):
 
     (sign, logscore) = np.linalg.slogdet(Kh)
     proxyScore = logscore #for now, ignoring the sign of the determinant
+
+    return proxyScore, Kh
+
+def evaluateModelProxyAlt(architecture,xTest,numSamples):
+
+    if numSamples > np.shape(xTest)[0]:
+        print("Error: number of samples requested to be used for proxy exceeds number of samples in test dataset.")
+        return None, None
+
+    Na = sum(architecture[1:-1]) #total number of ReLU functions in network (neurons, excluding output)
+
+    xSamples = np.random.default_rng().choice(xTest,numSamples,replace=False) #each row of this matrix is a sample from the test dataset to be used in proxy
+
+    model = BuildModel(architecture) #the model is built and initialized, but not trained (also, this proxy function is designed for the ReLU activation function)
+
+    binaryVectors = reLUvectors(architecture,model,xSamples) #binary vectors indicating where the ReLU was active, or not, for each neuron (one row per neuron) for each test example (one column per example)
+
+    Kh = np.expand_dims(np.array([Na - distanceHamming(binaryVectors[:,0],binaryVectors[:,j]) for j in range(numSamples)]),0)
+    for i in range(1,numSamples):
+        Kh = np.vstack((Kh,np.expand_dims(np.array([Na - distanceHamming(binaryVectors[:,i],binaryVectors[:,j]) for j in range(numSamples)]),0)))
+
+    logscore = np.log(np.sum(Kh)) #alternate logarithmic score function that favors network architectures predisposed to differentiate more between test inputs
+    # logscore = np.log(np.sum(Kh - Na*np.eye(np.shape(Kh)[0]))) #functionally equivalent to the one above, but slightly slower, use this if the intermediate numbers get so big the code can't differentiate between them
+    proxyScore = logscore
 
     return proxyScore, Kh
 
