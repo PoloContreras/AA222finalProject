@@ -8,7 +8,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten
 from sklearn.metrics import mean_squared_error, accuracy_score
 
-from tensorflow.keras.datasets import mnist
+import tensorflow_datasets as tfds
 
 # import pdb
 
@@ -55,45 +55,37 @@ def datasetLoad(inputSteps=15,traindata='pedestrian_traindata_ohio.hdf5',testdat
     print("input tensor shape (validation): ",xTest.shape)
     print("output label matrix shape (validation): ",yTest.shape)
 
-    # Normalization: subtract mean from data without rescaling
-    xTrainMean = np.mean(x,axis=0)
+    return (x,y),(xTest,yTest)
 
-    xN = x - np.repeat(np.expand_dims(xTrainMean,0),np.shape(x)[0],axis=0)
-    xTestN = xTest - np.repeat(np.expand_dims(xTrainMean,0),np.shape(xTest)[0],axis=0)
-
-    return xN,y,xTestN,yTest
+# HELPER FUNCTION TO NORMALIZE IMAGE DATA FOR CLASSIFICATION
+def normalize_image(image,label):
+    return cast(image, float32) / 255., label
 
 # LOADING MNIST DATASET, POPULAR FOR TESTING SMALL NEURAL NETWORKS
 def mnistLoad():
-    (x_train,y),(x_test,yTest) = mnist.load_data()
+    (ds_train,ds_test),ds_info = tfds.load(
+        'mnist',
+        split=['train','test'],
+        shuffle_files=True,
+        with_info=True
+    )
 
-    x = np.zeros((np.shape(x_train)[0],np.prod(np.shape(x_train)[1:])))
-    xTest = np.zeros((np.shape(x_test)[0],np.prod(np.shape(x_test)[1:])))
+    ds_train = ds_train.map(
+        normalize_image,num_parallel_calls=data.AUTOTUNE
+    )
+    ds_train = ds_train.cache()
+    ds_train = ds_train.shuffle(ds_info.splits['train'].num_examples)
+    ds_train = ds_train.batch(128)
+    ds_train = ds_train.prefetch(data.AUTOTUNE)
 
-    for i in range(np.shape(x_train)[0]): #there is a far more elegant way to do this, which I'll look into if I have time
-        x[i,:] = x_train[i,:,:].flatten()
+    ds_test = ds_test.map(
+        normalize_image, num_parallel_calls=data.AUTOTUNE
+    )
+    ds_test = ds_test.batch(128)
+    ds_test = ds_test.cache()
+    ds_test = ds_test.prefetch(data.AUTOTUNE)
 
-    for j in range(np.shape(x_test)[0]):
-        xTest[j,:] = x_test[j,:,:].flatten()
-
-    print("input tensor shape (training): ",x.shape)
-    print("output label matrix shape (training): ",y.shape)
-
-    print("input tensor shape (validation): ",xTest.shape)
-    print("output label matrix shape (validation): ",yTest.shape)
-
-    # Normalization: subtract mean from data without rescaling
-    xTrainMean = np.mean(x,axis=0)
-
-    xN = x - np.repeat(np.expand_dims(xTrainMean,0),np.shape(x)[0],axis=0)
-    xTestN = xTest - np.repeat(np.expand_dims(xTrainMean,0),np.shape(xTest)[0],axis=0)
-
-    # # Normalization: subtract mean from data while rescaling
-    # xTrainStDev = np.std(x,axis=0)
-    # xN = ( x - np.repeat(np.expand_dims(xTrainMean,0),np.shape(x)[0],axis=0) )/ np.repeat(np.expand_dims(xTrainStDev + 1e-7,0),np.shape(x)[0],axis=0)
-    # xTestN = ( xTest - np.repeat(np.expand_dims(xTrainMean,0),np.shape(xTest)[0],axis=0) )/ np.repeat(np.expand_dims(xTrainStDev + 1e-7,0),np.shape(xTest)[0],axis=0)
-
-    return xN,y,xTestN,yTest
+    return ds_train, ds_test
 
 
 #DEFINIITION OF NEURAL NETWORK STRUCTURE
@@ -107,8 +99,10 @@ def BuildModel(architecture,activation_function='relu',regression = True):
         print("Error: the first layer is listed as having no neurons.")
         return None
 
-    
-    networkArch = [Dense(architecture[1],input_dim=input,activation=activation_function)] #initialization of the list describing network structure
+    if regression:
+        networkArch = [Dense(architecture[1],input_dim=input,activation=activation_function)] #initialization of the list describing network structure
+    else:
+        networkArch = [Flatten(),Dense(architecture[1],activation=activation_function,input_dim=np.prod(input))]
 
     #Parsing the network architecture...
     maxLayers = len(architecture) #the length of the tuple is the maximum number of layers the generated network can have
@@ -132,7 +126,7 @@ def BuildModel(architecture,activation_function='relu',regression = True):
             #metrics=['mean_squared_error'], #include this metric?
         )
     else: #categorization problem, where the outputs must choose between several available options
-        model.compile('adam',loss = 'accuracy',)
+        model.compile('adam',loss = 'accuracy_score',)
 
     for i in range(len(networkArch)): #give names to each of the layers in the model, for future reference
         model.layers[i]._name = 'layer_' + str(i)
@@ -141,15 +135,23 @@ def BuildModel(architecture,activation_function='relu',regression = True):
 
 #BUILD, TRAIN AND EVALUATE NEURAL NETWORK OF A SPECIFIC ARCHITECTURE
 # def evaluateModelDesign(model,architecture,x,y,xTest,yTest,save=True,training_epochs=10,regression=True,verbose=True): #"model" is supposed to be the output of the BuildModel function, seen above 
-def evaluateModelDesign(model,architecture,x,y,xTest,yTest,save=True,training_epochs=10,regression=True,verbose=True): #"model" is supposed to be the output of the BuildModel function, seen above 
+def evaluateModelDesign(model,architecture,ds_train,ds_test,save=True,training_epochs=10,regression=True,verbose=True): #"model" is supposed to be the output of the BuildModel function, seen above 
 
     if training_epochs > 0: #training_epochs=0 will skip the training process and only evaluate the model performance on the test set, for a previously trained model
-        model.fit(
-            x, #training input data
-            y, #training output labels for supervised learning
-            epochs=training_epochs, #number of times to iterate over training data
-            validation_data =(xTest,yTest), #test set for model verification
-        )
+        if regression:
+            model.fit(
+                ds_train[0], #training input data
+                ds_train[1], #training output labels for supervised learning
+                epochs=training_epochs, #number of times to iterate over training data
+                # validation_data =(xTest,yTest), #test set for model verification
+                validation_data = ds_test, #test set for model verification
+            )
+        else:
+            model.fit(
+                ds_train, #training input data and output labels
+                epochs=training_epochs, #number of times to iterate over training data
+                validation_data =ds_test, #test set for model verification
+            )
 
     # y_krm = model.predict(x)
 
@@ -167,9 +169,11 @@ def evaluateModelDesign(model,architecture,x,y,xTest,yTest,save=True,training_ep
     # plt.show()
 
     if regression:
-        score = mean_squared_error(yTest,model.predict(xTest))
+        # score = mean_squared_error(yTest,model.predict(xTest))
+        score = mean_squared_error(ds_test[1],model.predict(ds_test[0]))
     else:
-        score = accuracy_score(yTest,model.predict(xTest))
+        # score = accuracy_score(yTest,model.predict(xTest))
+        score = accuracy_score(ds_test)
 
     if verbose:
         print('Mean squared error of model '+str(architecture)+' on validation data: ',score) #the script will take your word for whatever the specified architecture was, so be careful
@@ -184,7 +188,7 @@ def loadModel(architecture):
     return model
 
 #EVALUATION FUNCTION FOR PREVIOUSLY SAVED MODEL, WITH NO OPTION TO TRAIN DNN FURTHER OR SAVE NETWORK AS A SEPARATE FILE
-def evaluateModel(model,architecture,xTest,yTest,regression=True,verbose=True):
+def evaluateModel(model,architecture,ds_test,regression=True,verbose=True):
 
     # y_krm = model.predict(x)
 
@@ -202,9 +206,9 @@ def evaluateModel(model,architecture,xTest,yTest,regression=True,verbose=True):
     # plt.show()
 
     if regression:
-        score = mean_squared_error(yTest,model.predict(xTest))
+        score = mean_squared_error(ds_test[1],model.predict(ds_test[0]))
     else:
-        score = accuracy_score(yTest,model.predict(xTest))
+        score = accuracy_score(ds_test)
 
     if verbose:
         print('Mean squared error of model with structure '+str(architecture)+' on validation data: ',score)
