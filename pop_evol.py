@@ -64,11 +64,12 @@ def mutate_architecture(architecture, num_mutations=1):
   
    for _ in range(num_mutations):
        # Generate a mutated architecture using Hooke-Jeeves
-       mutated_architecture = HookeJeevesPop(architecture)
-
+       mutated_architecture_np = HookeJeevesPop(architecture)
+       mutated_architecture_list = mutated_architecture_np.tolist()
+    
 
        # Add the mutated architecture to the list
-       mutated_architecture.append(mutated_architecture)
+       mutated_architecture.extend(mutated_architecture_list)
 
 
    return tuple(mutated_architecture)
