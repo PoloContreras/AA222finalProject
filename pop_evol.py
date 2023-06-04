@@ -67,6 +67,8 @@ def mutate_architecture(architecture, num_mutations=1):
        mutated_architecture_np = HookeJeevesPop(architecture)
        mutated_architecture_list = mutated_architecture_np.tolist()
     
+       if mutated_architecture_list[0] == 0:
+          continue
 
        # Add the mutated architecture to the list
        mutated_architecture.extend(mutated_architecture_list)
