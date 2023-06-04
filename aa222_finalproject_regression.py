@@ -132,7 +132,7 @@ def BuildModel(architecture,activation_function='relu',regression = True):
             #metrics=['mean_squared_error'], #include this metric?
         )
     else: #categorization problem, where the outputs must choose between several available options
-        model.compile('adam',loss = 'accuracy',)
+        model.compile('adam',loss =keras.losses.SparseCategoricalCrossentropy(from_logits=True),metrics=[keras.metrics.SparseCategoricalAccuracy()],)
 
     for i in range(len(networkArch)): #give names to each of the layers in the model, for future reference
         model.layers[i]._name = 'layer_' + str(i)
@@ -169,7 +169,7 @@ def evaluateModelDesign(model,architecture,x,y,xTest,yTest,save=True,training_ep
     if regression:
         score = mean_squared_error(yTest,model.predict(xTest))
     else:
-        score = accuracy_score(yTest,model.predict(xTest))
+        score = accuracy_score(yTest,np.argmax(model.predict(xTest),axis=1))
 
     if verbose:
         print('Mean squared error of model '+str(architecture)+' on validation data: ',score) #the script will take your word for whatever the specified architecture was, so be careful
@@ -204,7 +204,7 @@ def evaluateModel(model,architecture,xTest,yTest,regression=True,verbose=True):
     if regression:
         score = mean_squared_error(yTest,model.predict(xTest))
     else:
-        score = accuracy_score(yTest,model.predict(xTest))
+        score = accuracy_score(yTest,np.argmax(model.predict(xTest),axis=1))
 
     if verbose:
         print('Mean squared error of model with structure '+str(architecture)+' on validation data: ',score)
