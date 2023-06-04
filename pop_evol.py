@@ -13,7 +13,7 @@ def generate_random_architecture(max_layers=5, max_neurons=64):
    architecture = [28]  # Starting with input layer neurons
 
    for i in range(num_layers - 1):
-       if i >=1 and architecture[i] == 0:
+       if i >=2 and architecture[i-1] == 0:
         architecture.extend([0]*(num_layers -1-i))
         break
        architecture.append(random.randint(0, max_neurons))
@@ -36,12 +36,23 @@ def generate_population(size):
 
 
 def evaluate_population(population, xTest, yTest):
-   scores = []
-   for architecture in population:
-       model = BuildModel(architecture)
-       score = evaluateModel(model, architecture, xTest, yTest, verbose=False)
-       scores.append(score)
-   return scores
+    scores = []
+    for architecture in population:
+        if has_zero_neurons_after_layer(architecture):
+            scores.append(0)  # Assign a score of 0 to architectures with invalid configurations
+        else:
+            model = BuildModel(architecture)
+            score = evaluateModel(model, architecture, xTest, yTest, verbose=False)
+            scores.append(score)
+    return scores
+
+def has_zero_neurons_after_layer(architecture):
+    for i in range(1, len(architecture)):
+        if architecture[i-1] == 0 and architecture[i] != 0:
+            return True
+    return False
+
+
 
 
 def evolve_population(population, scores, parents_max):
@@ -65,13 +76,14 @@ def mutate_architecture(architecture, num_mutations=1):
    for _ in range(num_mutations):
        # Generate a mutated architecture using Hooke-Jeeves
        mutated_architecture_np = HookeJeevesPop(architecture)
-       mutated_architecture_list = mutated_architecture_np.tolist()
+       mutated_architecture_tuple= tuple(mutated_architecture_np)
+
+       if mutated_architecture_tuple[0] == 0:
+            continue
     
-       if mutated_architecture_list[0] == 0:
-          continue
 
        # Add the mutated architecture to the list
-       mutated_architecture.extend(mutated_architecture_list)
+       mutated_architecture.extend(mutated_architecture_tuple)
 
 
    return tuple(mutated_architecture)
