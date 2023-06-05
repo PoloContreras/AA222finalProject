@@ -119,8 +119,8 @@ def mutate_architecture(architecture, num_mutations=1):
 if __name__ == '__main__':
     x, y, xTest, yTest = datasetLoad()
     population_size = 5
-    parents_max = 5
-    generations_max = 5
+    parents_max = 3
+    generations_max = 3
     # generations_max can definitely be increased fo’ sho’
 
     population = generate_population(population_size)
