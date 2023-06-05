@@ -154,6 +154,25 @@ if __name__ == '__main__':
 
     ensemble_output = np.mean(ensemble_outputs)
     
+    data = {
+        'Architecture': population,
+        'Score': generation_scores
+    }
+    df = pd.DataFrame(data)
+    
+     # Display the table
+    print(df)
+    
+    data = {
+        'Architecture': best_arch,
+        'Output': ensemble_outputs
+    }
+    df = pd.DataFrame(data)
+
+    # Display the table
+    print(df)
+
+    
     # Network Architectures in Space
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
