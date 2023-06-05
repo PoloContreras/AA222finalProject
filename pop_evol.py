@@ -120,9 +120,9 @@ def mutate_architecture(architecture, num_mutations=1):
 # Main (Regression Dataset)
 if __name__ == '__main__':
     x, y, xTest, yTest = datasetLoad()
-    population_size = 5
-    parents_max = 3
-    generations_max = 3
+    population_size = 10
+    parents_max = 5
+    generations_max = 5
     # generations_max can definitely be increased fo’ sho’
 
     population = generate_population(population_size)
@@ -185,7 +185,7 @@ if __name__ == '__main__':
 
     # Scores for Populations by Generation
     plt.figure(figsize=(8, 6))
-    plt.plot(generations, scores, marker='o')
+    plt.scatter(generations, scores, marker='o')
     plt.xlabel('Generation')
     plt.ylabel('Score')
     plt.title('Scores for Populations by Generation')
@@ -228,7 +228,6 @@ if __name__ == '__main__':
 
 # iterations = 100 
 # best_guess = random_search(iterations)
-
 
 
 
