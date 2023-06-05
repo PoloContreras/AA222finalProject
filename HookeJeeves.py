@@ -18,6 +18,7 @@ def HookeJeeves(input_neurons, output_neurons, alpha, max_layers):
     a[0] = input_neurons
     a[1] = randint(1, alpha)
     a[max_layers + 1] = output_neurons
+    a = np.array([28, 10, 10, 10, 10, 10, 2])
 
     #After the first zero make every next value also 0 except for the last one
     idx = np.array(np.where(a == 0))
@@ -27,31 +28,40 @@ def HookeJeeves(input_neurons, output_neurons, alpha, max_layers):
             a[i] = 0
 
     a_best = a
-    # x, y, xtest, ytest = datasetLoad()
-    x, y, xtest, ytest = mnistLoad()
-    model = BuildModel(a, activation_function='relu', regression=False)
-    best_score = evaluateModelDesign(model, a, x, y, xtest, ytest, save=False, training_epochs=10, regression=False)
-    score2, KH = evaluateModelProxyAlt(a, xtest, 80)
+    x, y, xtest, ytest = datasetLoad()
+    # x, y, xtest, ytest = mnistLoad()
+    model = BuildModel(a, activation_function='relu', regression=True)
+    best_score = evaluateModelDesign(model, a, x, y, xtest, ytest, save=False, training_epochs=10, regression=True)
+    # best_score, KH = evaluateModelProxyAlt(a, xtest, 80)
 
-    score_hist.append(best_score)
-    proxy_score_hist.append(score2)
-    ahist.append(a.tolist())
 
     # #Then we start the loop
     while alpha >= 1:
         improved = False
+        score_hist.append(best_score)
+        ahist.append(a_best.tolist())
 
         #CHECK THE ENTIRE VECTOR
         for i in range(1, len(a)-1): #The range specifically does not change the first or the last value
  
             if a[i] <= 2*alpha:
+                if a[i] == 0:
+                    a[i] += alpha
+                    model = BuildModel(a, activation_function='relu', regression=True)
+                    score = evaluateModelDesign(model, a, x, y, xtest, ytest, save=False, training_epochs=10, regression=True)
+                    # score, KH = evaluateModelProxyAlt(a, xtest, 80)
+                    if score < best_score:
+                        a_best = np.copy(a)
+                        best_score = score
+                        improved = True
+                        a[i] -= alpha
+
+                    break
+
                 a[i] += alpha
-                model = BuildModel(a, activation_function='relu', regression=False)
-                score = evaluateModelDesign(model, a, x, y, xtest, ytest, save=False, training_epochs=10, regression=False)
-                score2, KH = evaluateModelProxyAlt(a, xtest, 80)
-                score_hist.append(score)
-                proxy_score_hist.append(score2)
-                ahist.append(a.tolist())
+                model = BuildModel(a, activation_function='relu', regression=True)
+                score = evaluateModelDesign(model, a, x, y, xtest, ytest, save=False, training_epochs=10, regression=True)
+                # score, KH = evaluateModelProxyAlt(a, xtest, 80)
                 if score < best_score:
                     a_best = np.copy(a)
                     best_score = score
@@ -62,12 +72,9 @@ def HookeJeeves(input_neurons, output_neurons, alpha, max_layers):
             elif a[i] > 2*alpha:
                 #Upper Branch
                 a[i] += alpha
-                model = BuildModel(a, activation_function='relu', regression=False)
-                score = evaluateModelDesign(model, a, x, y, xtest, ytest, save=False, training_epochs=10, regression=False)
-                score2, KH = evaluateModelProxyAlt(a, xtest, 80)
-                score_hist.append(score)
-                proxy_score_hist.append(score2)
-                ahist.append(a.tolist())
+                model = BuildModel(a, activation_function='relu', regression=True)
+                score = evaluateModelDesign(model, a, x, y, xtest, ytest, save=False, training_epochs=10, regression=True)
+                # score, KH = evaluateModelProxyAlt(a, xtest, 80)
                 if score < best_score:
                     a_best = np.copy(a)
                     best_score = score
@@ -75,12 +82,9 @@ def HookeJeeves(input_neurons, output_neurons, alpha, max_layers):
 
                 #Lower Branch
                 a[i] -= 2*alpha
-                model = BuildModel(a, activation_function='relu', regression=False)
-                score = evaluateModelDesign(model, a, x, y, xtest, ytest, save=False, training_epochs=10, regression=False)
-                score2, KH = evaluateModelProxyAlt(a, xtest, 80)
-                score_hist.append(score)
-                proxy_score_hist.append(score2)
-                ahist.append(a.tolist())
+                model = BuildModel(a, activation_function='relu', regression=True)
+                score = evaluateModelDesign(model, a, x, y, xtest, ytest, save=False, training_epochs=10, regression=True)
+                # score, KH = evaluateModelProxyAlt(a, xtest, 80)
                 if score < best_score:
                     a_best = np.copy(a)
                     best_score = score
@@ -121,11 +125,16 @@ def PosDefMatrix(max_layers):
 
 def HookeJeevesSVD(input_neurons, output_neurons, alpha, max_layers):
     '''Gives you optimal network structure from an initial guess'''
+    score_hist = []
+    proxy_score_hist = []
+    ahist = []
+
     #Hooking and Jeeving
     a = np.array([randint(0, 10) for p in range(0, max_layers + 2)])
     a[0] = input_neurons
     a[1] = randint(1, alpha)
     a[max_layers + 1] = output_neurons
+    a = np.array([28, 10, 10, 10, 10, 10, 2])
 
     #After the first zero make every next value also 0 except for the last one
     idx = np.array(np.where(a == 0))
@@ -136,13 +145,16 @@ def HookeJeevesSVD(input_neurons, output_neurons, alpha, max_layers):
 
     a_best = a
     x, y, xtest, ytest = datasetLoad()
-    model = BuildModel(a, activation_function='relu')
-    # score2, KH = evaluateModelProxy(a, xtest, 100, output_dim=2)
+    # x, y, xtest, ytest = mnistLoad()
+    model = BuildModel(a, activation_function='relu', regression=True)
+    # best_score, KH = evaluateModelProxy(a, xtest, 80)
     best_score = evaluateModelDesign(model, a, x, y, xtest, ytest, save=False, training_epochs=10)
 
 
     # Then we start the loop
-    while alpha > 1:
+    while alpha >= 1:
+        score_hist.append(best_score)
+        ahist.append(a_best.tolist())
         U = PosDefMatrix(max_layers)
         search = alpha*U
         improved = False
@@ -159,8 +171,13 @@ def HookeJeevesSVD(input_neurons, output_neurons, alpha, max_layers):
             if idx.size > 0:
                 for i in range(idx[0, 0], len(a)-1):
                     a[i] = 0
+            
+            if a[1] == 0:
+                a[1] = alpha
 
+            model = BuildModel(a, activation_function='relu', regression=True)
             score = evaluateModelDesign(model, a, x, y, xtest, ytest, save=False, training_epochs=10)
+            # score, KH = evaluateModelProxyAlt(a, xtest, 80)
             if score < best_score:
                 best_score = score
                 a_best = a
@@ -179,7 +196,7 @@ def HookeJeevesSVD(input_neurons, output_neurons, alpha, max_layers):
             else:
                 break
 
-    return a
+    return a, score_hist
 
 def HookeJeevesPop(a, alpha=10):
     '''Gives you optimal network structure from an initial guess'''
@@ -196,12 +213,12 @@ def HookeJeevesPop(a, alpha=10):
     a_best = a
     x, y, xtest, ytest = datasetLoad()
     model = BuildModel(a, activation_function='relu')
-    # score2, KH = evaluateModelProxy(a, xtest, 100, output_dim=2)
-    best_score = evaluateModelDesign(model, a, x, y, xtest, ytest, save=False, training_epochs=10)
+    best_score, KH = evaluateModelProxy(a, xtest, 80)
+    # best_score = evaluateModelDesign(model, a, x, y, xtest, ytest, save=False, training_epochs=10)
 
 
     # Then we start the loop
-    while alpha > 1:
+    while alpha >= 1:
         U = PosDefMatrix(max_layers)
         search = alpha*U
         improved = False
@@ -219,7 +236,12 @@ def HookeJeevesPop(a, alpha=10):
                 for i in range(idx[0, 0], len(a)-1):
                     a[i] = 0
 
-            score = evaluateModelDesign(model, a, x, y, xtest, ytest, save=False, training_epochs=10)
+
+            if a[1] == 0:
+                a[1] = alpha
+
+            # score = evaluateModelDesign(model, a, x, y, xtest, ytest, save=False, training_epochs=10)
+            score, KH = evaluateModelProxy(a, xtest, 80)
             if score < best_score:
                 best_score = score
                 a_best = a
