@@ -15,10 +15,12 @@ from HookeJeeves import HookeJeevesPop
 from random import randint
 
 
-# max neurons is kinda arbitrary, so look into manipulating that maybe
+# Max neurons is an arbitrary value and can be increased
+# Function generates a random architecture, and makes sure it follows the rules (if 2 or 3 layer is 0, 
+# all following is 0 except for the last ouput layer; no duplicate random architectures)
 def generate_random_architecture(max_layers=5, max_neurons=64):
     num_layers = random.randint(2, max_layers)
-    architecture = [28]  # Starting with input layer neurons
+    architecture = [28]  
 
     for i in range(num_layers - 1):
         if i >= 1 and architecture[i-1] == 0:
@@ -33,6 +35,7 @@ def generate_random_architecture(max_layers=5, max_neurons=64):
 
     return tuple(architecture)
 
+# generates the populattion based on a given size using random unique architectures
 def generate_population(size):
     population = []
     unique_architectures = set()
@@ -44,7 +47,7 @@ def generate_population(size):
             unique_architectures.add(architecture_tuple)
     return population
 
-
+# Uses multiprocessing to calculate the score of the given architecture
 def evaluate_population(population, xTest, yTest):
     pool = multiprocessing.Pool()
     scores = pool.map(evaluate_architecture, [(arch, xTest, yTest) for arch in population])
@@ -52,8 +55,8 @@ def evaluate_population(population, xTest, yTest):
     pool.join()
     return scores
 
-def evaluate_architecture(args):
-    architecture, xTest, yTest = args
+# Evaluates an architecture passed through via evaluate population; uses evaluateModel rather than proxy
+def evaluate_architecture(architecture, xTest, yTest):
     if has_zero_neurons_after_layer(architecture):
         return 0
     else:
@@ -61,13 +64,14 @@ def evaluate_architecture(args):
         score = evaluateModel(model, architecture, xTest, yTest, verbose=False)
         return score
 
-
+# Checks to see if it has the zero neuron layer before a nonzero neuron layer
 def has_zero_neurons_after_layer(architecture):
     for i in range(1, len(architecture)):
         if architecture[i-1] == 0 and architecture[i] != 0:
             return True
     return False
 
+# Evolves the population after its evaluation using mutated architecture from given parents
 def evolve_population(population, scores, parents_max):
    sorted_indices = np.argsort(scores)
    parents = [population[i] for i in sorted_indices[:parents_max]]
@@ -82,6 +86,7 @@ def evolve_population(population, scores, parents_max):
 
    return new_pop
 
+# mutate the architecture and make sure it has maximum five layers and does not violate the nonzero/ zero neuron requirements
 def mutate_architecture(architecture, num_mutations=1):
     mutated_architecture = list(architecture)
     
@@ -115,21 +120,20 @@ def mutate_architecture(architecture, num_mutations=1):
     return tuple(mutated_architecture)
 
 
-
-
 # Main (Regression Dataset)
 if __name__ == '__main__':
     x, y, xTest, yTest = datasetLoad()
     population_size = 10
     parents_max = 5
     generations_max = 5
-    # generations_max can definitely be increased fo’ sho’
+    # generations_max can be manipualted, as can population_size and parents_max
 
     population = generate_population(population_size)
 
     scores = []
     generations = []
     
+    # Evolve the population
     for generation in range(generations_max):
         generation_scores = evaluate_population(population, xTest, yTest)
         best_arch = [population[i] for i in np.argsort(generation_scores)[:parents_max]]
@@ -160,7 +164,6 @@ if __name__ == '__main__':
     }
     df = pd.DataFrame(data)
     
-     # Display the table
     print(df)
     
     data = {
@@ -169,9 +172,7 @@ if __name__ == '__main__':
     }
     df = pd.DataFrame(data)
 
-    # Display the table
     print(df)
-
     
     # Network Architectures in Space
     fig = plt.figure(figsize=(10, 8))
