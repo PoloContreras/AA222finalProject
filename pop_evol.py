@@ -132,17 +132,17 @@ if __name__ == '__main__':
     
     for generation in range(generations_max):
         generation_scores = evaluate_population(population, xTest, yTest)
-        best_arch = [population[i] for i in np.argsort(scores)[:parents_max]]
+        best_arch = [population[i] for i in np.argsort(generation_scores)[:parents_max]]
         best_networks = []
 
-        population = evolve_population(population, scores, parents_max)
+        population = evolve_population(population, generation_scores, parents_max)
 
         scores.extend(generation_scores)
 
         generations.extend([generation + 1] * len(generation_scores))
 
     # Get best architecture and best network
-    best_architecture = population[np.argmin(scores)]
+    best_architecture = population[np.argmin(generation_scores)]
     best_network = BuildModel(best_architecture)
     best_network_output = evaluateModel(best_network, best_architecture, xTest, yTest, verbose = True)
 
