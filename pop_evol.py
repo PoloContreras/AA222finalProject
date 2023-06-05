@@ -118,7 +118,7 @@ def mutate_architecture(architecture, num_mutations=1):
 # Main (Regression Dataset)
 if __name__ == '__main__':
     x, y, xTest, yTest = datasetLoad()
-    population_size = 10
+    population_size = 5
     parents_max = 5
     generations_max = 5
     # generations_max can definitely be increased fo’ sho’
