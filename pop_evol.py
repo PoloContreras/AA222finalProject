@@ -126,9 +126,10 @@ if __name__ == '__main__':
     population = generate_population(population_size)
 
     scores = []
+    generations = []
     
     for generation in range(generations_max):
-        scores = evaluate_population(population, xTest, yTest)
+        generation_scores = evaluate_population(population, xTest, yTest)
         best_arch = [population[i] for i in np.argsort(scores)[:parents_max]]
         best_networks = []
 
