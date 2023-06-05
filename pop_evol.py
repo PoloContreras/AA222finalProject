@@ -2,6 +2,10 @@ import numpy as np
 
 import random
 
+import pandas as pd
+
+import matplotlib.pyplot as plt
+
 from aa222_finalproject_regression import BuildModel, evaluateModel, datasetLoad
 from HookeJeeves import HookeJeevesPop
 from random import randint
@@ -134,6 +138,43 @@ for network, architecture in zip(best_networks, best_arch):
 
 ensemble_output = np.mean(ensemble_outputs)
 
+# Create a DataFrame with architectures and scores
+data = {
+    'Architecture': population,
+    'Score': scores
+}
+df = pd.DataFrame(data)
+
+# Display the table
+print(df)
+
+# Create a line plot
+generations = range(1, generations_max + 1)
+plt.plot(generations, scores, marker='o')
+plt.xlabel('Generation')
+plt.ylabel('Score')
+plt.title('Scores over Generations')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+data = {
+    'Architecture': best_arch,
+    'Output': ensemble_outputs
+}
+df = pd.DataFrame(data)
+
+# Display the table
+print(df)
+
+# Create a box plot
+plt.boxplot(ensemble_outputs)
+plt.xlabel('Network')
+plt.ylabel('Output')
+plt.title('Ensemble Outputs')
+plt.xticks(range(1, len(best_arch) + 1), best_arch, rotation=90)
+plt.tight_layout()
+plt.show()
 
 # —--------------------------------------------------
 # **Potential code for best initial guess before hooke-Jeeves implementation**
