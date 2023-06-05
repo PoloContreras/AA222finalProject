@@ -125,9 +125,8 @@ if __name__ == '__main__':
 
     population = generate_population(population_size)
 
-    scores_history = []
-    generations = []
-
+    scores = []
+    
     for generation in range(generations_max):
         scores = evaluate_population(population, xTest, yTest)
         best_arch = [population[i] for i in np.argsort(scores)[:parents_max]]
@@ -135,8 +134,9 @@ if __name__ == '__main__':
 
         population = evolve_population(population, scores, parents_max)
 
-        scores_history.append(scores)
-        generations.append(generation)
+        scores.extend(generation_scores)
+
+        generations.extend([generation + 1] * len(generation_scores))
 
     # Get best architecture and best network
     best_architecture = population[np.argmin(scores)]
@@ -161,11 +161,7 @@ if __name__ == '__main__':
     print(df)
 
   
-   
-
-    for i in range(len(scores_history)):
-        plt.plot(generations, scores_history[i], marker='o', label='Generation {}'.format(i + 1))
-      
+    plt.plot(generations, scores, marker='o')      
     plt.xlabel('Generation')
     plt.ylabel('Score')
     plt.title('Scores over Generations')
