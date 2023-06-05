@@ -176,7 +176,7 @@ if __name__ == '__main__':
     # Network Architectures in Space
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter([arch[0] for arch in population], [arch[1] for arch in population], scores, c=scores, cmap='viridis')
+    ax.scatter([arch[0] for arch in population], [arch[1] for arch in population], generation_scores, c=generation_scores, cmap='viridis')
     ax.set_xlabel('Layers')
     ax.set_ylabel('Neurons')
     ax.set_zlabel('Score')
