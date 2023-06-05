@@ -17,6 +17,9 @@ def generate_random_architecture(max_layers=5, max_neurons=64):
         architecture.extend([0]*(num_layers -1-i))
         break
        architecture.append(random.randint(0, max_neurons))
+
+   if architecture[1] == 0 or (num_layers >= 3 and architecture[2] == 0):
+        architecture[3:-1] = [0] * (len(architecture) - 4)
   
    architecture[-1] = 2
 
@@ -81,6 +84,10 @@ def mutate_architecture(architecture, num_mutations=1):
        if mutated_architecture_tuple[0] == 0:
             continue
     
+       if mutated_architecture_tuple[1] == 0 or (len(mutated_architecture_tuple) >= 3 and mutated_architecture_tuple[2] == 0):
+            mutated_architecture_tuple = list(mutated_architecture_tuple)
+            mutated_architecture_tuple[3:-1] = [0] * (len(mutated_architecture_tuple) - 4)
+            mutated_architecture_tuple = tuple(mutated_architecture_tuple)
 
        # Add the mutated architecture to the list
        mutated_architecture.extend(mutated_architecture_tuple)
