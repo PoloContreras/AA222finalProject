@@ -4,6 +4,8 @@ import random
 
 import pandas as pd
 
+import seaborn as sns
+
 import matplotlib.pyplot as plt
 
 import multiprocessing
@@ -151,42 +153,37 @@ if __name__ == '__main__':
         ensemble_outputs.append(evaluateModel(network, architecture, xTest, yTest))
 
     ensemble_output = np.mean(ensemble_outputs)
-    # Create a DataFrame with architectures and scores
-    data = {
-        'Architecture': population,
-        'Score': generation_scores
-    }
-    df = pd.DataFrame(data)
+    
+    # Network Architectures in Space
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter([arch[0] for arch in population], [arch[1] for arch in population], scores, c=scores, cmap='viridis')
+    ax.set_xlabel('Layers')
+    ax.set_ylabel('Neurons')
+    ax.set_zlabel('Score')
+    ax.set_title('Network Architectures in Space')
+    plt.show()
 
-    # Display the table
-    print(df)
-
-  
-    plt.plot(generations, scores, marker='o')      
+    # Scores for Populations by Generation
+    plt.figure(figsize=(8, 6))
+    plt.plot(generations, scores, marker='o')
     plt.xlabel('Generation')
     plt.ylabel('Score')
-    plt.title('Scores over Generations')
+    plt.title('Scores for Populations by Generation')
     plt.grid(True)
     plt.tight_layout()
     plt.show()
 
-    data = {
-        'Architecture': best_arch,
-        'Output': ensemble_outputs
-    }
-    df = pd.DataFrame(data)
-
-    # Display the table
-    print(df)
-
-    # Create a box plot
-    plt.boxplot(ensemble_outputs)
-    plt.xlabel('Network')
+    # Ensemble Outputs
+    plt.figure(figsize=(8, 6))
+    sns.boxplot(x=best_arch, y=ensemble_outputs)
+    plt.xlabel('Network Architecture')
     plt.ylabel('Output')
     plt.title('Ensemble Outputs')
-    plt.xticks(range(1, len(best_arch) + 1), best_arch, rotation=90)
+    plt.xticks(rotation=90)
     plt.tight_layout()
     plt.show()
+
 
 # —--------------------------------------------------
 # **Potential code for best initial guess before hooke-Jeeves implementation**
