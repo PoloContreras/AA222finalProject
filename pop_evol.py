@@ -154,7 +154,7 @@ if __name__ == '__main__':
     # Create a DataFrame with architectures and scores
     data = {
         'Architecture': population,
-        'Score': scores
+        'Score': generation_scores
     }
     df = pd.DataFrame(data)
 
